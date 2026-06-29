@@ -72,13 +72,16 @@ BtnStroke.Parent = CopyBtn
 
 -- Close Button
 local CloseBtn = Instance.new("TextButton")
+CloseBtn.Name = "CloseBtn"
 CloseBtn.Size = UDim2.new(0, 25, 0, 25)
 CloseBtn.Position = UDim2.new(1, -28, 0, 4)
 CloseBtn.BackgroundTransparency = 1
-CloseBtn.Text = "✕"
+CloseBtn.Text = "X"
 CloseBtn.TextColor3 = Color3.fromRGB(150, 150, 150)
 CloseBtn.TextSize = 13
 CloseBtn.Font = Enum.Font.GothamBold
+CloseBtn.ZIndex = 10
+CloseBtn.Active = true
 CloseBtn.Parent = Frame
 
 -- Close Button Handling

@@ -151,13 +151,16 @@ function UI.create(utils, autoBuyCallback, autoRebirthCallback, closeCallback)
     
     -- Close button on Main Frame
     local CloseBtn = Instance.new("TextButton")
+    CloseBtn.Name = "CloseBtn"
     CloseBtn.Size = UDim2.new(0, 30, 0, 30)
     CloseBtn.Position = UDim2.new(1, -35, 0, 8)
     CloseBtn.BackgroundTransparency = 1
-    CloseBtn.Text = "✕"
+    CloseBtn.Text = "X"
     CloseBtn.TextColor3 = Color3.fromRGB(150, 150, 150)
     CloseBtn.TextSize = 14
     CloseBtn.Font = Enum.Font.GothamBold
+    CloseBtn.ZIndex = 10
+    CloseBtn.Active = true
     CloseBtn.Parent = ContentArea
     
     -- TitleBar for Dragging Main GUI
