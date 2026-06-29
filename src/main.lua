@@ -156,7 +156,9 @@ return function(loadModule)
             if AutoHarvestEnabled then
                 local success, err = pcall(function()
                     updateQuantity(true)
-                    harvestModule.harvest(ui.selectedFruit)
+                    harvestModule.harvest(ui.selectedFruit, function()
+                        return AutoHarvestEnabled and Running
+                    end)
                     updateQuantity(false)
                 end)
                 if not success then

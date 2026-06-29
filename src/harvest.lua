@@ -8,7 +8,7 @@ local Config = require(ReplicatedStorage.Config)
 
 local HarvestModule = {}
 
-function HarvestModule.harvest(selectedFruit)
+function HarvestModule.harvest(selectedFruit, isHarvestEnabledCallback)
     local character = LocalPlayer.Character
     local rootPart = character and character:FindFirstChild("HumanoidRootPart")
     if not rootPart then return end
@@ -92,11 +92,18 @@ function HarvestModule.harvest(selectedFruit)
     
     -- Harvest loop
     for _, cluster in ipairs(clusters) do
+        if isHarvestEnabledCallback and not isHarvestEnabledCallback() then
+            break
+        end
+        
         rootPart.CFrame = CFrame.new(cluster.centerPos + Vector3.new(0, 2, 0))
         rootPart.AssemblyLinearVelocity = Vector3.zero
         task.wait(0.08) -- Wait for position replication to the server (crucial!)
         
         for _, detector in ipairs(cluster.detectors) do
+            if isHarvestEnabledCallback and not isHarvestEnabledCallback() then
+                break
+            end
             if detector.Parent and detector.Parent.Parent and detector.Parent.Parent.Transparency == 0 then
                 fireclickdetector(detector)
                 task.wait(0.15) -- Rate limit wait to bypass the game's click anticheat
