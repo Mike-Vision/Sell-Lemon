@@ -1,8 +1,7 @@
 -- loader.lua
 -- Loader for Sell Lemons Auto Buy Script 🍋
 
--- Set this to your GitHub username and repository details once uploaded
-local githubUser = "YOUR_GITHUB_USERNAME"
+local githubUser = "Mike-Vision"
 local githubRepo = "Sell-Lemon"
 local githubBranch = "main"
 
