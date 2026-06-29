@@ -8,11 +8,24 @@ return function(loadModule)
     local ReplicatedStorage = game:GetService("ReplicatedStorage")
     local LocalTycoon = require(ReplicatedStorage.Modules.Tycoon.LocalTycoon)
     local ClientTycoonRebirth = require(ReplicatedStorage.Modules.Tycoon.Component.Client.ClientTycoonRebirth)
+    local ClientTycoonEvolution = require(ReplicatedStorage.Modules.Tycoon.Component.Client.ClientTycoonEvolution)
+    local ClientTycoonAscension = require(ReplicatedStorage.Modules.Tycoon.Component.Client.ClientTycoonAscension)
+    local TycoonBalances = require(ReplicatedStorage.Modules.Tycoon.Component.TycoonBalances)
     local RemoteSignal = require(ReplicatedStorage.Core.RemoteSignal)
     local ClickFruitService = require(ReplicatedStorage.Modules.Service.ClickFruitService)
+    local Balance = require(ReplicatedStorage.Balance)
+    local Huge = require(ReplicatedStorage.Modules.Huge)
     
     local tycoon = LocalTycoon.get()
     local rebirthComp = tycoon:GetComponent(ClientTycoonRebirth)
+    local evoComp = tycoon:GetComponent(ClientTycoonEvolution)
+    local ascensionComp = tycoon:GetComponent(ClientTycoonAscension)
+    local tycoonBalances = tycoon:GetComponent(TycoonBalances)
+    
+    local evolutionParams = Balance.RebirthParameters.Evolution
+    local function nextEvolutionInvestors(lvl)
+        return Huge.exp10(evolutionParams[2] * lvl + evolutionParams[1])
+    end
     
     -- Setup Global Session Tracking & Event Cleanup
     getgenv().ENI_SCRIPT_SESSION = os.clock()
@@ -28,6 +41,8 @@ return function(loadModule)
     local Running = true
     local AutoBuyEnabled = false
     local AutoRebirthEnabled = false
+    local AutoEvolveEnabled = false
+    local AutoAscendEnabled = false
     local AutoHarvestEnabled = false
     
     local ui
@@ -68,6 +83,12 @@ return function(loadModule)
         end,
         function(enabled)
             AutoRebirthEnabled = enabled
+        end,
+        function(enabled)
+            AutoEvolveEnabled = enabled
+        end,
+        function(enabled)
+            AutoAscendEnabled = enabled
         end,
         function(enabled)
             AutoHarvestEnabled = enabled
@@ -124,7 +145,7 @@ return function(loadModule)
     
     local LocalPlayer = game:GetService("Players").LocalPlayer
     
-    -- Auto Buy & Rebirth Loop
+    -- Auto Buy, Rebirth & Status Loop
     task.spawn(function()
         while Running and getgenv().ENI_SCRIPT_SESSION == currentSession do
             local success, err = pcall(function()
@@ -144,20 +165,55 @@ return function(loadModule)
                     end
                 end
                 
+                -- Calculate Investors for Status Display
+                local currentInv = tycoonBalances:GetInvestors()
+                local spentInv = tycoonBalances:GetInvestorsSpent()
+                local potentialInv = rebirthComp:GetPotentialInvestors()
+                local totalInv = Huge.add(Huge.add(currentInv, spentInv), potentialInv)
+                
+                local currentLvl = evoComp:GetEvolution()
+                local reqInv = nextEvolutionInvestors(currentLvl)
+                
+                local progress, nextEvolveBonus = evoComp:GetEvolutionProgress()
+                
+                local totalStr = table.concat({ Huge.formatShort(totalInv) }, " ")
+                local reqStr = table.concat({ Huge.formatShort(reqInv) }, " ")
+                local progressVal = math.clamp(progress * 100, 0, 100)
+                
                 local buyable = tycoonModule.getBuyableButtons()
                 if AutoBuyEnabled then
-                    ui.StatusLabel.Text = "Cash: " .. tostring(cash) .. "\nBuyable Upgrades: " .. #buyable
+                    ui.StatusLabel.Text = string.format(
+                        "Cash: %s\n\nInvestors: %s / %s\nEvolve Progress: %.2f%%\n\nUpgrades Buyable: %d",
+                        tostring(cash),
+                        totalStr,
+                        reqStr,
+                        progressVal,
+                        #buyable
+                    )
                     
                     if #buyable > 0 then
                         local target = buyable[1]
                         local displayName = target:GetAttribute("DisplayName")
                         local showName = (displayName and displayName ~= "") and displayName or target.Name
-                        ui.StatusLabel.Text = "Cash: " .. tostring(cash) .. "\nBuying: " .. showName
+                        ui.StatusLabel.Text = string.format(
+                            "Cash: %s\n\nInvestors: %s / %s\nEvolve Progress: %.2f%%\n\nBuying: %s",
+                            tostring(cash),
+                            totalStr,
+                            reqStr,
+                            progressVal,
+                            showName
+                        )
                         task.wait(0.1)
                         tycoonModule.purchaseUpgrade(target)
                     end
                 else
-                    ui.StatusLabel.Text = "Cash: " .. tostring(cash) .. "\nStatus: Paused"
+                    ui.StatusLabel.Text = string.format(
+                        "Cash: %s\n\nInvestors: %s / %s\nEvolve Progress: %.2f%%\n\nAuto Buy: Paused",
+                        tostring(cash),
+                        totalStr,
+                        reqStr,
+                        progressVal
+                    )
                 end
             end)
             
@@ -167,6 +223,38 @@ return function(loadModule)
                 end
             end
             task.wait(0.5)
+        end
+    end)
+    
+    -- Auto Evolve Loop
+    task.spawn(function()
+        while Running and getgenv().ENI_SCRIPT_SESSION == currentSession do
+            if AutoEvolveEnabled then
+                pcall(function()
+                    local progress, nextEvolveBonus = evoComp:GetEvolutionProgress()
+                    if progress >= 1 then
+                        evoComp:EvolveAsync(false)
+                        task.wait(2.0)
+                    end
+                end)
+            end
+            task.wait(1.5)
+        end
+    end)
+    
+    -- Auto Ascension Loop
+    task.spawn(function()
+        while Running and getgenv().ENI_SCRIPT_SESSION == currentSession do
+            if AutoAscendEnabled then
+                pcall(function()
+                    local progress = ascensionComp:GetAscensionProgress()
+                    if progress >= 1 then
+                        ascensionComp:AscendAsync()
+                        task.wait(5.0)
+                    end
+                end)
+            end
+            task.wait(2.0)
         end
     end)
     

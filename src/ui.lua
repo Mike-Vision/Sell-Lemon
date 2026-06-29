@@ -63,7 +63,7 @@ local function makeInteractive(button, defaultBg, hoverBg, defaultStroke, hoverS
     end)
 end
 
-function UI.create(utils, autoBuyCallback, autoRebirthCallback, autoHarvestCallback, closeCallback)
+function UI.create(utils, autoBuyCallback, autoRebirthCallback, autoEvolveCallback, autoAscendCallback, autoHarvestCallback, closeCallback)
     local ScreenGui = Instance.new("ScreenGui")
     ScreenGui.Name = "ENIAutoBuyGui"
     ScreenGui.ResetOnSpawn = false
@@ -343,7 +343,7 @@ function UI.create(utils, autoBuyCallback, autoRebirthCallback, autoHarvestCallb
         label.BackgroundTransparency = 1
         label.Text = text
         label.TextColor3 = Color3.fromRGB(220, 220, 225)
-        label.TextSize = 11
+        label.TextSize = 10
         label.Font = Enum.Font.GothamBold
         label.TextXAlignment = Enum.TextXAlignment.Left
         label.TextWrapped = true -- Enable wrapping
@@ -405,7 +405,7 @@ function UI.create(utils, autoBuyCallback, autoRebirthCallback, autoHarvestCallb
     end
     
     -- ----------------------------------------------------
-    -- Content for Main Page (Two Columns layout)
+    -- Content for Main Page (Two Columns layout with 4 toggles)
     -- ----------------------------------------------------
     local LeftColumn = Instance.new("Frame")
     LeftColumn.Name = "LeftColumn"
@@ -414,12 +414,13 @@ function UI.create(utils, autoBuyCallback, autoRebirthCallback, autoHarvestCallb
     LeftColumn.BackgroundTransparency = 1
     LeftColumn.Parent = mainPage
     
-    local AutoBuyToggleBtn, setAutoBuyToggle = createPremiumToggle(LeftColumn, UDim2.new(1, 0, 0, 40), UDim2.new(0, 0, 0, 5), "Auto Buy")
+    local AutoBuyToggleBtn, setAutoBuyToggle = createPremiumToggle(LeftColumn, UDim2.new(1, 0, 0, 35), UDim2.new(0, 0, 0, 5), "Auto Buy")
+    local AutoEvolveToggleBtn, setAutoEvolveToggle = createPremiumToggle(LeftColumn, UDim2.new(1, 0, 0, 35), UDim2.new(0, 0, 0, 45), "Auto Evolve")
     
     -- Cash & Status card
     local StatusCard = Instance.new("Frame")
-    StatusCard.Size = UDim2.new(1, 0, 1, -55)
-    StatusCard.Position = UDim2.new(0, 0, 0, 55)
+    StatusCard.Size = UDim2.new(1, 0, 1, -90)
+    StatusCard.Position = UDim2.new(0, 0, 0, 90)
     StatusCard.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
     StatusCard.Parent = LeftColumn
     
@@ -437,16 +438,16 @@ function UI.create(utils, autoBuyCallback, autoRebirthCallback, autoHarvestCallb
     StatusLabel.Size = UDim2.new(1, -20, 1, -20)
     StatusLabel.Position = UDim2.new(0, 10, 0, 10)
     StatusLabel.BackgroundTransparency = 1
-    StatusLabel.Text = "Cash: Loading...\nStatus: Idle\nActive Upgrades: Ready"
+    StatusLabel.Text = "Cash: Loading...\nInvestors: Loading...\nStatus: Idle"
     StatusLabel.TextColor3 = Color3.fromRGB(190, 190, 195)
-    StatusLabel.TextSize = 11
+    StatusLabel.TextSize = 10
     StatusLabel.Font = Enum.Font.Gotham
     StatusLabel.TextWrapped = true
     StatusLabel.TextYAlignment = Enum.TextYAlignment.Top
     StatusLabel.TextXAlignment = Enum.TextXAlignment.Left
     StatusLabel.Parent = StatusCard
     
-    -- Right Column: Rebirth
+    -- Right Column: Rebirth & Ascension
     local RightColumn = Instance.new("Frame")
     RightColumn.Name = "RightColumn"
     RightColumn.Size = UDim2.new(0.5, -6, 1, -25)
@@ -454,12 +455,13 @@ function UI.create(utils, autoBuyCallback, autoRebirthCallback, autoHarvestCallb
     RightColumn.BackgroundTransparency = 1
     RightColumn.Parent = mainPage
     
-    local AutoRebirthToggleBtn, setAutoRebirthToggle = createPremiumToggle(RightColumn, UDim2.new(1, 0, 0, 40), UDim2.new(0, 0, 0, 5), "Auto Rebirth")
+    local AutoRebirthToggleBtn, setAutoRebirthToggle = createPremiumToggle(RightColumn, UDim2.new(1, 0, 0, 35), UDim2.new(0, 0, 0, 5), "Auto Rebirth")
+    local AutoAscendToggleBtn, setAutoAscendToggle = createPremiumToggle(RightColumn, UDim2.new(1, 0, 0, 35), UDim2.new(0, 0, 0, 45), "Auto Ascend")
     
     -- Rebirth Config Input
     local TargetCard = Instance.new("Frame")
-    TargetCard.Size = UDim2.new(1, 0, 1, -55)
-    TargetCard.Position = UDim2.new(0, 0, 0, 55)
+    TargetCard.Size = UDim2.new(1, 0, 1, -90)
+    TargetCard.Position = UDim2.new(0, 0, 0, 90)
     TargetCard.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
     TargetCard.Parent = RightColumn
     
@@ -474,14 +476,14 @@ function UI.create(utils, autoBuyCallback, autoRebirthCallback, autoHarvestCallb
     
     local TargetTextBox = Instance.new("TextBox")
     TargetTextBox.Name = "TargetTextBox"
-    TargetTextBox.Size = UDim2.new(1, -20, 0, 34)
-    TargetTextBox.Position = UDim2.new(0, 10, 0, 10)
+    TargetTextBox.Size = UDim2.new(1, -20, 0, 30)
+    TargetTextBox.Position = UDim2.new(0, 10, 0, 8)
     TargetTextBox.BackgroundColor3 = Color3.fromRGB(28, 28, 35)
     TargetTextBox.PlaceholderText = "Min Investors (e.g. 10T)"
     TargetTextBox.Text = ""
     TargetTextBox.TextColor3 = Color3.fromRGB(255, 255, 255)
     TargetTextBox.PlaceholderColor3 = Color3.fromRGB(110, 110, 118)
-    TargetTextBox.TextSize = 11
+    TargetTextBox.TextSize = 10
     TargetTextBox.Font = Enum.Font.GothamMedium
     TargetTextBox.BorderSizePixel = 0
     TargetTextBox.Parent = TargetCard
@@ -504,12 +506,12 @@ function UI.create(utils, autoBuyCallback, autoRebirthCallback, autoHarvestCallb
     
     local TargetFormatLabel = Instance.new("TextLabel")
     TargetFormatLabel.Name = "TargetFormatLabel"
-    TargetFormatLabel.Size = UDim2.new(1, -20, 1, -55)
-    TargetFormatLabel.Position = UDim2.new(0, 10, 0, 50)
+    TargetFormatLabel.Size = UDim2.new(1, -20, 1, -45)
+    TargetFormatLabel.Position = UDim2.new(0, 10, 0, 42)
     TargetFormatLabel.BackgroundTransparency = 1
     TargetFormatLabel.Text = "Target: -"
     TargetFormatLabel.TextColor3 = Color3.fromRGB(140, 140, 145)
-    TargetFormatLabel.TextSize = 11
+    TargetFormatLabel.TextSize = 10
     TargetFormatLabel.Font = Enum.Font.Gotham
     TargetFormatLabel.TextWrapped = true
     TargetFormatLabel.TextYAlignment = Enum.TextYAlignment.Top
@@ -728,11 +730,25 @@ function UI.create(utils, autoBuyCallback, autoRebirthCallback, autoHarvestCallb
         autoBuyCallback(autoBuyState)
     end)
     
+    local autoEvolveState = false
+    AutoEvolveToggleBtn.MouseButton1Click:Connect(function()
+        autoEvolveState = not autoEvolveState
+        setAutoEvolveToggle(autoEvolveState)
+        autoEvolveCallback(autoEvolveState)
+    end)
+    
     local autoRebirthState = false
     AutoRebirthToggleBtn.MouseButton1Click:Connect(function()
         autoRebirthState = not autoRebirthState
         setAutoRebirthToggle(autoRebirthState)
         autoRebirthCallback(autoRebirthState)
+    end)
+    
+    local autoAscendState = false
+    AutoAscendToggleBtn.MouseButton1Click:Connect(function()
+        autoAscendState = not autoAscendState
+        setAutoAscendToggle(autoAscendState)
+        autoAscendCallback(autoAscendState)
     end)
     
     local autoHarvestState = false
