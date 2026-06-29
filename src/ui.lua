@@ -3,10 +3,40 @@ local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 local TweenService = game:GetService("TweenService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Huge = require(ReplicatedStorage.Modules.Huge)
 
 local UI = {}
 
-function UI.create(utils, toggleCallback, closeCallback)
+local suffixExponents = {
+    K = 3, M = 6, B = 9, T = 12, QD = 15, QN = 18, SX = 21, SP = 24, OC = 27, NO = 30,
+    DC = 33, UD = 36, DD = 39, TD = 42, QTD = 45, QND = 48, SXD = 51, SPD = 54, OCD = 57, NOD = 60
+}
+
+local function parseInputToHuge(text)
+    text = text:gsub("%s+", ""):upper()
+    
+    -- Check for suffixes
+    for suffix, exp in pairs(suffixExponents) do
+        if text:sub(-#suffix) == suffix then
+            local numPart = text:sub(1, -#suffix - 1)
+            local num = tonumber(numPart)
+            if num and num > 0 then
+                return math.log10(num) + exp
+            end
+        end
+    end
+    
+    -- Check for raw number
+    local num = tonumber(text)
+    if num and num > 0 then
+        return math.log10(num)
+    end
+    
+    return nil
+end
+
+function UI.create(utils, autoBuyCallback, autoRebirthCallback, closeCallback)
     local ScreenGui = Instance.new("ScreenGui")
     ScreenGui.Name = "ENIAutoBuyGui"
     ScreenGui.ResetOnSpawn = false
@@ -210,33 +240,101 @@ function UI.create(utils, toggleCallback, closeCallback)
     addTabButton("Info", "ℹ️ Info & Credits")
     selectTab("Main")
     
-    -- Content for Main Page
+    -- ----------------------------------------------------
+    -- Content for Main Page (Two Columns layout)
+    -- ----------------------------------------------------
+    
+    -- Left Column: Auto Buy
+    local LeftColumn = Instance.new("Frame")
+    LeftColumn.Name = "LeftColumn"
+    LeftColumn.Size = UDim2.new(0.5, -5, 1, -25)
+    LeftColumn.Position = UDim2.new(0, 0, 0, 25)
+    LeftColumn.BackgroundTransparency = 1
+    LeftColumn.Parent = mainPage
+    
     local ToggleBtn = Instance.new("TextButton")
-    ToggleBtn.Size = UDim2.new(1, 0, 0, 42)
-    ToggleBtn.Position = UDim2.new(0, 0, 0, 30)
+    ToggleBtn.Name = "ToggleBtn"
+    ToggleBtn.Size = UDim2.new(1, 0, 0, 36)
     ToggleBtn.BackgroundColor3 = Color3.fromRGB(220, 50, 50)
     ToggleBtn.Text = "Auto Buy: OFF"
     ToggleBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-    ToggleBtn.TextSize = 13
+    ToggleBtn.TextSize = 12
     ToggleBtn.Font = Enum.Font.GothamBold
     ToggleBtn.BorderSizePixel = 0
-    ToggleBtn.Parent = mainPage
+    ToggleBtn.Parent = LeftColumn
     
     local ToggleCorner = Instance.new("UICorner")
     ToggleCorner.CornerRadius = UDim.new(0, 6)
     ToggleCorner.Parent = ToggleBtn
     
     local StatusLabel = Instance.new("TextLabel")
-    StatusLabel.Size = UDim2.new(1, 0, 1, -80)
-    StatusLabel.Position = UDim2.new(0, 0, 0, 80)
+    StatusLabel.Name = "StatusLabel"
+    StatusLabel.Size = UDim2.new(1, 0, 1, -42)
+    StatusLabel.Position = UDim2.new(0, 0, 0, 42)
     StatusLabel.BackgroundTransparency = 1
     StatusLabel.Text = "Cash: Loading...\nStatus: Idle"
     StatusLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
-    StatusLabel.TextSize = 12
+    StatusLabel.TextSize = 11
     StatusLabel.Font = Enum.Font.Gotham
     StatusLabel.TextWrapped = true
     StatusLabel.TextYAlignment = Enum.TextYAlignment.Top
-    StatusLabel.Parent = mainPage
+    StatusLabel.TextXAlignment = Enum.TextXAlignment.Left
+    StatusLabel.Parent = LeftColumn
+    
+    -- Right Column: Auto Rebirth
+    local RightColumn = Instance.new("Frame")
+    RightColumn.Name = "RightColumn"
+    RightColumn.Size = UDim2.new(0.5, -5, 1, -25)
+    RightColumn.Position = UDim2.new(0.5, 5, 0, 25)
+    RightColumn.BackgroundTransparency = 1
+    RightColumn.Parent = mainPage
+    
+    local RebirthToggleBtn = Instance.new("TextButton")
+    RebirthToggleBtn.Name = "RebirthToggleBtn"
+    RebirthToggleBtn.Size = UDim2.new(1, 0, 0, 36)
+    RebirthToggleBtn.BackgroundColor3 = Color3.fromRGB(220, 50, 50)
+    RebirthToggleBtn.Text = "Auto Rebirth: OFF"
+    RebirthToggleBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    RebirthToggleBtn.TextSize = 12
+    RebirthToggleBtn.Font = Enum.Font.GothamBold
+    RebirthToggleBtn.BorderSizePixel = 0
+    RebirthToggleBtn.Parent = RightColumn
+    
+    local RebirthToggleCorner = Instance.new("UICorner")
+    RebirthToggleCorner.CornerRadius = UDim.new(0, 6)
+    RebirthToggleCorner.Parent = RebirthToggleBtn
+    
+    local TargetTextBox = Instance.new("TextBox")
+    TargetTextBox.Name = "TargetTextBox"
+    TargetTextBox.Size = UDim2.new(1, 0, 0, 32)
+    TargetTextBox.Position = UDim2.new(0, 0, 0, 42)
+    TargetTextBox.BackgroundColor3 = Color3.fromRGB(35, 35, 40)
+    TargetTextBox.PlaceholderText = "Min Investors (e.g. 10T)"
+    TargetTextBox.Text = ""
+    TargetTextBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+    TargetTextBox.PlaceholderColor3 = Color3.fromRGB(120, 120, 120)
+    TargetTextBox.TextSize = 11
+    TargetTextBox.Font = Enum.Font.Gotham
+    TargetTextBox.BorderSizePixel = 0
+    TargetTextBox.Parent = RightColumn
+    
+    local TextBoxCorner = Instance.new("UICorner")
+    TextBoxCorner.CornerRadius = UDim.new(0, 6)
+    TextBoxCorner.Parent = TargetTextBox
+    
+    local TargetFormatLabel = Instance.new("TextLabel")
+    TargetFormatLabel.Name = "TargetFormatLabel"
+    TargetFormatLabel.Size = UDim2.new(1, 0, 1, -80)
+    TargetFormatLabel.Position = UDim2.new(0, 0, 0, 80)
+    TargetFormatLabel.BackgroundTransparency = 1
+    TargetFormatLabel.Text = "Target: -"
+    TargetFormatLabel.TextColor3 = Color3.fromRGB(150, 150, 150)
+    TargetFormatLabel.TextSize = 11
+    TargetFormatLabel.Font = Enum.Font.Gotham
+    TargetFormatLabel.TextWrapped = true
+    TargetFormatLabel.TextYAlignment = Enum.TextYAlignment.Top
+    TargetFormatLabel.TextXAlignment = Enum.TextXAlignment.Left
+    TargetFormatLabel.Parent = RightColumn
     
     -- Content for Info Page
     local CreditsLabel = Instance.new("TextLabel")
@@ -305,27 +403,56 @@ function UI.create(utils, toggleCallback, closeCallback)
         closeGui()
     end)
     
-    -- Trigger close callbacks on ScreenGui destroying
-    ScreenGui.Destroying:Connect(function()
-        closeCallback()
+    -- Setup Target Textbox Input Change Hook
+    local targetExp = nil
+    TargetTextBox:GetPropertyChangedSignal("Text"):Connect(function()
+        local text = TargetTextBox.Text
+        if text == "" then
+            TargetFormatLabel.Text = "Target: -"
+            targetExp = nil
+            return
+        end
+        local parsed = parseInputToHuge(text)
+        if parsed then
+            targetExp = parsed
+            local a, b = Huge.formatShort(parsed)
+            TargetFormatLabel.Text = "Target: " .. a .. " " .. b
+        else
+            targetExp = nil
+            TargetFormatLabel.Text = "Target: Invalid Format"
+        end
     end)
     
-    -- Toggle Switch Hook
-    local enabledState = false
+    -- Hook Toggle Switches
+    local autoBuyState = false
     ToggleBtn.MouseButton1Click:Connect(function()
-        enabledState = not enabledState
-        if enabledState then
+        autoBuyState = not autoBuyState
+        if autoBuyState then
             ToggleBtn.Text = "Auto Buy: ON"
             ToggleBtn.BackgroundColor3 = Color3.fromRGB(50, 180, 50)
         else
             ToggleBtn.Text = "Auto Buy: OFF"
             ToggleBtn.BackgroundColor3 = Color3.fromRGB(220, 50, 50)
         end
-        toggleCallback(enabledState)
+        autoBuyCallback(autoBuyState)
+    end)
+    
+    local autoRebirthState = false
+    RebirthToggleBtn.MouseButton1Click:Connect(function()
+        autoRebirthState = not autoRebirthState
+        if autoRebirthState then
+            RebirthToggleBtn.Text = "Auto Rebirth: ON"
+            RebirthToggleBtn.BackgroundColor3 = Color3.fromRGB(50, 180, 50)
+        else
+            RebirthToggleBtn.Text = "Auto Rebirth: OFF"
+            RebirthToggleBtn.BackgroundColor3 = Color3.fromRGB(220, 50, 50)
+        end
+        autoRebirthCallback(autoRebirthState)
     end)
     
     UI.ScreenGui = ScreenGui
     UI.StatusLabel = StatusLabel
+    UI.getTargetInvestors = function() return targetExp end
     return UI
 end
 

@@ -4,13 +4,24 @@ return function(loadModule)
     local tycoonModule = loadModule("tycoon")
     local uiModule = loadModule("ui")
     
+    local ReplicatedStorage = game:GetService("ReplicatedStorage")
+    local LocalTycoon = require(ReplicatedStorage.Modules.Tycoon.LocalTycoon)
+    local ClientTycoonRebirth = require(ReplicatedStorage.Modules.Tycoon.Component.Client.ClientTycoonRebirth)
+    
+    local tycoon = LocalTycoon.get()
+    local rebirthComp = tycoon:GetComponent(ClientTycoonRebirth)
+    
     local Running = true
     local AutoBuyEnabled = false
+    local AutoRebirthEnabled = false
     
     local ui = uiModule.create(
         utils,
         function(enabled)
             AutoBuyEnabled = enabled
+        end,
+        function(enabled)
+            AutoRebirthEnabled = enabled
         end,
         function()
             Running = false
@@ -23,8 +34,22 @@ return function(loadModule)
         while Running do
             local success, err = pcall(function()
                 local cash = LocalPlayer.leaderstats.Cash.Value
-                local buyable = tycoonModule.getBuyableButtons()
                 
+                -- Check Auto Rebirth
+                if AutoRebirthEnabled then
+                    local target = ui.getTargetInvestors()
+                    if target then
+                        local potential = rebirthComp:GetPotentialInvestors()
+                        if potential >= target then
+                            ui.StatusLabel.Text = "Status: Rebirthing..."
+                            rebirthComp:RebirthAsync(false)
+                            task.wait(1.5)
+                            return
+                        end
+                    end
+                end
+                
+                local buyable = tycoonModule.getBuyableButtons()
                 if AutoBuyEnabled then
                     ui.StatusLabel.Text = "Cash: " .. tostring(cash) .. "\nBuyable Upgrades: " .. #buyable
                     
@@ -48,5 +73,5 @@ return function(loadModule)
         end
     end)
     
-    print("[ENI] Auto Buy GUI loaded successfully!")
+    print("[ENI] Auto Buy & Rebirth GUI loaded successfully!")
 end
