@@ -36,7 +36,7 @@ local function parseInputToHuge(text)
     return nil
 end
 
-function UI.create(utils, autoBuyCallback, autoRebirthCallback, closeCallback)
+function UI.create(utils, autoBuyCallback, autoRebirthCallback, autoHarvestCallback, closeCallback)
     local ScreenGui = Instance.new("ScreenGui")
     ScreenGui.Name = "ENIAutoBuyGui"
     ScreenGui.ResetOnSpawn = false
@@ -81,7 +81,7 @@ function UI.create(utils, autoBuyCallback, autoRebirthCallback, closeCallback)
     -- ----------------------------------------------------
     local MainFrame = Instance.new("Frame")
     MainFrame.Name = "MainFrame"
-    MainFrame.Size = UDim2.new(0, 440, 0, 260)
+    MainFrame.Size = UDim2.new(0, 440, 0, 290)
     MainFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
     MainFrame.AnchorPoint = Vector2.new(0.5, 0.5)
     MainFrame.BackgroundColor3 = Color3.fromRGB(24, 24, 28)
@@ -199,6 +199,7 @@ function UI.create(utils, autoBuyCallback, autoRebirthCallback, closeCallback)
     end
     
     local mainPage = createPage("Main", "AUTOMATION MODULES")
+    local harvestPage = createPage("Harvest", "AUTO HARVEST MODULE")
     local infoPage = createPage("Info", "INFORMATION & CREDITS")
     
     -- Tab Switching Logic
@@ -240,6 +241,7 @@ function UI.create(utils, autoBuyCallback, autoRebirthCallback, closeCallback)
     end
     
     addTabButton("Main", "🏠 Main Options")
+    addTabButton("Harvest", "🍋 Auto Harvest")
     addTabButton("Info", "ℹ️ Info & Credits")
     selectTab("Main")
     
@@ -353,9 +355,80 @@ function UI.create(utils, autoBuyCallback, autoRebirthCallback, closeCallback)
     CreditsLabel.TextXAlignment = Enum.TextXAlignment.Left
     CreditsLabel.Parent = infoPage
     
+    -- ----------------------------------------------------
+    -- Content for Harvest Page
+    -- ----------------------------------------------------
+    local HarvestToggleBtn = Instance.new("TextButton")
+    HarvestToggleBtn.Name = "HarvestToggleBtn"
+    HarvestToggleBtn.Size = UDim2.new(1, 0, 0, 36)
+    HarvestToggleBtn.Position = UDim2.new(0, 0, 0, 25)
+    HarvestToggleBtn.BackgroundColor3 = Color3.fromRGB(220, 50, 50)
+    HarvestToggleBtn.Text = "Auto Harvest: OFF"
+    HarvestToggleBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    HarvestToggleBtn.TextSize = 12
+    HarvestToggleBtn.Font = Enum.Font.GothamBold
+    HarvestToggleBtn.BorderSizePixel = 0
+    HarvestToggleBtn.Parent = harvestPage
+    
+    local HarvestToggleCorner = Instance.new("UICorner")
+    HarvestToggleCorner.CornerRadius = UDim.new(0, 6)
+    HarvestToggleCorner.Parent = HarvestToggleBtn
+    
+    local FruitSelectBtn = Instance.new("TextButton")
+    FruitSelectBtn.Name = "FruitSelectBtn"
+    FruitSelectBtn.Size = UDim2.new(1, 0, 0, 36)
+    FruitSelectBtn.Position = UDim2.new(0, 0, 0, 70)
+    FruitSelectBtn.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
+    FruitSelectBtn.Text = "Selected Fruit: Active Fruit"
+    FruitSelectBtn.TextColor3 = Color3.fromRGB(255, 220, 100)
+    FruitSelectBtn.TextSize = 12
+    FruitSelectBtn.Font = Enum.Font.GothamBold
+    FruitSelectBtn.BorderSizePixel = 0
+    FruitSelectBtn.Parent = harvestPage
+    
+    local FruitSelectCorner = Instance.new("UICorner")
+    FruitSelectCorner.CornerRadius = UDim.new(0, 6)
+    FruitSelectCorner.Parent = FruitSelectBtn
+    
+    local HarvestStatusLabel = Instance.new("TextLabel")
+    HarvestStatusLabel.Name = "HarvestStatusLabel"
+    HarvestStatusLabel.Size = UDim2.new(1, 0, 1, -120)
+    HarvestStatusLabel.Position = UDim2.new(0, 0, 0, 120)
+    HarvestStatusLabel.BackgroundTransparency = 1
+    HarvestStatusLabel.Text = "Status: Idle\nQuantity: - ready | - clicked\nNote: If Selected Fruit is not 'Active Fruit' and does not match your active tree type, harvesting will be skipped for safety."
+    HarvestStatusLabel.TextColor3 = Color3.fromRGB(150, 150, 150)
+    HarvestStatusLabel.TextSize = 11
+    HarvestStatusLabel.Font = Enum.Font.Gotham
+    HarvestStatusLabel.TextWrapped = true
+    HarvestStatusLabel.TextYAlignment = Enum.TextYAlignment.Top
+    HarvestStatusLabel.TextXAlignment = Enum.TextXAlignment.Left
+    HarvestStatusLabel.Parent = harvestPage
+    
+    -- Fruit Cycling List
+    local fruitsList = {"Active Fruit"}
+    pcall(function()
+        for _, evo in ipairs(require(ReplicatedStorage.Config).Evolutions) do
+            table.insert(fruitsList, evo.Name)
+        end
+    end)
+    if #fruitsList <= 1 then
+        fruitsList = {"Active Fruit", "Lemon", "Orange", "Lime", "Grapefruit", "Tangerine", "Pomelo", "Abyssalime", "Nullfruit", "Voidlemon", "Purity"}
+    end
+    
+    UI.selectedFruit = "Active Fruit"
+    local selectedFruitIndex = 1
+    FruitSelectBtn.MouseButton1Click:Connect(function()
+        selectedFruitIndex = selectedFruitIndex + 1
+        if selectedFruitIndex > #fruitsList then
+            selectedFruitIndex = 1
+        end
+        UI.selectedFruit = fruitsList[selectedFruitIndex]
+        FruitSelectBtn.Text = "Selected Fruit: " .. UI.selectedFruit
+    end)
+    
     -- Toggle visibility animations (Bounce popup)
     local isMainVisible = true
-    local originalSize = UDim2.new(0, 440, 0, 260)
+    local originalSize = UDim2.new(0, 440, 0, 290)
     
     local function openGui()
         isMainVisible = true
@@ -453,8 +526,22 @@ function UI.create(utils, autoBuyCallback, autoRebirthCallback, closeCallback)
         autoRebirthCallback(autoRebirthState)
     end)
     
+    local autoHarvestState = false
+    HarvestToggleBtn.MouseButton1Click:Connect(function()
+        autoHarvestState = not autoHarvestState
+        if autoHarvestState then
+            HarvestToggleBtn.Text = "Auto Harvest: ON"
+            HarvestToggleBtn.BackgroundColor3 = Color3.fromRGB(50, 180, 50)
+        else
+            HarvestToggleBtn.Text = "Auto Harvest: OFF"
+            HarvestToggleBtn.BackgroundColor3 = Color3.fromRGB(220, 50, 50)
+        end
+        autoHarvestCallback(autoHarvestState)
+    end)
+    
     UI.ScreenGui = ScreenGui
     UI.StatusLabel = StatusLabel
+    UI.HarvestStatusLabel = HarvestStatusLabel
     UI.getTargetInvestors = function() return targetExp end
     return UI
 end

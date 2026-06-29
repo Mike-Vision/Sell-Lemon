@@ -3,10 +3,13 @@ return function(loadModule)
     local utils = loadModule("utils")
     local tycoonModule = loadModule("tycoon")
     local uiModule = loadModule("ui")
+    local harvestModule = loadModule("harvest")
     
     local ReplicatedStorage = game:GetService("ReplicatedStorage")
     local LocalTycoon = require(ReplicatedStorage.Modules.Tycoon.LocalTycoon)
     local ClientTycoonRebirth = require(ReplicatedStorage.Modules.Tycoon.Component.Client.ClientTycoonRebirth)
+    local RemoteSignal = require(ReplicatedStorage.Core.RemoteSignal)
+    local ClickFruitService = require(ReplicatedStorage.Modules.Service.ClickFruitService)
     
     local tycoon = LocalTycoon.get()
     local rebirthComp = tycoon:GetComponent(ClientTycoonRebirth)
@@ -14,8 +17,38 @@ return function(loadModule)
     local Running = true
     local AutoBuyEnabled = false
     local AutoRebirthEnabled = false
+    local AutoHarvestEnabled = false
     
-    local ui = uiModule.create(
+    local ui
+    
+    local function updateQuantity(isHarvesting)
+        if not ui then return end
+        pcall(function()
+            local totalClicked = ClickFruitService:GetFruitsClicked()
+            local readyCount = 0
+            for _, item in ipairs(tycoon.Instance:GetDescendants()) do
+                if item:IsA("Model") and item.Name:lower():find("tree") then
+                    for _, fruit in ipairs(item:GetChildren()) do
+                        if fruit.Name == "Fruit" and fruit.Transparency == 0 then
+                            readyCount = readyCount + 1
+                        end
+                    end
+                end
+            end
+            
+            if AutoHarvestEnabled then
+                if isHarvesting then
+                    ui.HarvestStatusLabel.Text = "Status: Harvesting...\nQuantity: " .. readyCount .. " ready | " .. totalClicked .. " clicked\nNote: If Selected Fruit is not 'Active Fruit' and does not match your active tree type, harvesting will be skipped for safety."
+                else
+                    ui.HarvestStatusLabel.Text = "Status: Idle (Selected: " .. tostring(ui.selectedFruit) .. ")\nQuantity: " .. readyCount .. " ready | " .. totalClicked .. " clicked\nNote: If Selected Fruit is not 'Active Fruit' and does not match your active tree type, harvesting will be skipped for safety."
+                end
+            else
+                ui.HarvestStatusLabel.Text = "Status: OFF\nQuantity: - ready | " .. totalClicked .. " clicked"
+            end
+        end)
+    end
+    
+    ui = uiModule.create(
         utils,
         function(enabled)
             AutoBuyEnabled = enabled
@@ -23,13 +56,57 @@ return function(loadModule)
         function(enabled)
             AutoRebirthEnabled = enabled
         end,
+        function(enabled)
+            AutoHarvestEnabled = enabled
+            updateQuantity()
+        end,
         function()
             Running = false
         end
     )
     
+    -- Listen to fruit click events in real-time
+    local clickSignal = RemoteSignal.new("ClickFruitService.Clicked")
+    clickSignal.OnClientEvent:Connect(function()
+        task.wait(0.05) -- Allow stats replication
+        updateQuantity()
+    end)
+    
+    -- Listen to fruit growth changes in real-time (tycoon-wide + newly purchased trees)
+    local function connectFruit(fruit)
+        if fruit.Name == "Fruit" then
+            fruit:GetPropertyChangedSignal("Transparency"):Connect(updateQuantity)
+        end
+    end
+    
+    for _, item in ipairs(tycoon.Instance:GetDescendants()) do
+        if item:IsA("Model") and item.Name:lower():find("tree") then
+            for _, fruit in ipairs(item:GetChildren()) do
+                connectFruit(fruit)
+            end
+        end
+    end
+    
+    tycoon.Instance.DescendantAdded:Connect(function(descendant)
+        if descendant:IsA("Model") and descendant.Name:lower():find("tree") then
+            descendant.ChildAdded:Connect(function(child)
+                if child.Name == "Fruit" then
+                    connectFruit(child)
+                    updateQuantity()
+                end
+            end)
+            for _, child in ipairs(descendant:GetChildren()) do
+                if child.Name == "Fruit" then
+                    connectFruit(child)
+                end
+            end
+            updateQuantity()
+        end
+    end)
+    
     local LocalPlayer = game:GetService("Players").LocalPlayer
     
+    -- Auto Buy & Rebirth Loop
     task.spawn(function()
         while Running do
             local success, err = pcall(function()
@@ -73,5 +150,27 @@ return function(loadModule)
         end
     end)
     
-    print("[ENI] Auto Buy & Rebirth GUI loaded successfully!")
+    -- Auto Harvest Loop
+    task.spawn(function()
+        while Running do
+            if AutoHarvestEnabled then
+                local success, err = pcall(function()
+                    updateQuantity(true)
+                    harvestModule.harvest(ui.selectedFruit)
+                    updateQuantity(false)
+                end)
+                if not success then
+                    ui.HarvestStatusLabel.Text = "Status Error: " .. tostring(err)
+                end
+            end
+            task.wait(3.0)
+        end
+    end)
+    
+    -- Initial update
+    updateQuantity()
+    
+    print("[ENI] Auto Buy, Rebirth & Harvest GUI loaded successfully!")
 end
+
+
