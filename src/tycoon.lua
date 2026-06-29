@@ -26,11 +26,20 @@ function TycoonModule.getBuyableButtons()
                 local isPurchased = purchases:IsPurchased(cleanName)
                 local isShown = child:GetAttribute("Shown") == true
                 local isEnabled = child:GetAttribute("Enabled") ~= false
+                local isSpecial = child:GetAttribute("Special") == true
                 
                 local lockGui = child:FindFirstChild("Lock", true)
-                local lockVisible = lockGui and lockGui.Visible == true
+                local lockVisible = false
+                if lockGui then
+                    local billboard = lockGui:FindFirstAncestorOfClass("BillboardGui")
+                    if billboard then
+                        lockVisible = lockGui.Visible and billboard.Enabled
+                    else
+                        lockVisible = lockGui.Visible
+                    end
+                end
                 
-                if isShown and not isPurchased and isEnabled and not lockVisible then
+                if isShown and not isPurchased and isEnabled and not lockVisible and not isSpecial then
                     local priceLog = Balance.PurchasePrices[cleanName]
                     if priceLog and ascension then
                         local penalty = Huge.pow(Huge.toHuge(ascension:GetAscensionPricePenalty()), ascension:GetAscension())
