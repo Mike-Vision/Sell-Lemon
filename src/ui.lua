@@ -136,31 +136,25 @@ function UI.create(utils, autoBuyCallback, autoRebirthCallback, autoHarvestCallb
     MainCorner.CornerRadius = UDim.new(0, 14)
     MainCorner.Parent = MainFrame
     
-    -- Sleek border
+    -- Sleek border with top glowing gold gradient fading to dark charcoal
     local MainStroke = Instance.new("UIStroke")
-    MainStroke.Color = Color3.fromRGB(40, 40, 48)
-    MainStroke.Thickness = 1.5
+    MainStroke.Color = Color3.fromRGB(255, 255, 255)
+    MainStroke.Thickness = 1.2
     MainStroke.Parent = MainFrame
     
-    -- Modern Top Accent Line
-    local TopAccent = Instance.new("Frame")
-    TopAccent.Size = UDim2.new(1, 0, 0, 4)
-    TopAccent.BackgroundColor3 = Color3.fromRGB(255, 205, 50)
-    TopAccent.BorderSizePixel = 0
-    TopAccent.Parent = MainFrame
-    
-    local AccentGradient = Instance.new("UIGradient")
-    AccentGradient.Color = ColorSequence.new({
-        ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 215, 0)),
-        ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 120, 0))
+    local StrokeGradient = Instance.new("UIGradient")
+    StrokeGradient.Color = ColorSequence.new({
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 205, 50)),
+        ColorSequenceKeypoint.new(0.25, Color3.fromRGB(50, 50, 58)),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(22, 22, 26))
     })
-    AccentGradient.Parent = TopAccent
+    StrokeGradient.Rotation = 90
+    StrokeGradient.Parent = MainStroke
     
     -- Left Sidebar Container
     local Sidebar = Instance.new("Frame")
     Sidebar.Name = "Sidebar"
-    Sidebar.Size = UDim2.new(0, 130, 1, -4)
-    Sidebar.Position = UDim2.new(0, 0, 0, 4)
+    Sidebar.Size = UDim2.new(0, 130, 1, 0)
     Sidebar.BackgroundColor3 = Color3.fromRGB(11, 11, 14)
     Sidebar.BorderSizePixel = 0
     Sidebar.Parent = MainFrame
@@ -202,8 +196,8 @@ function UI.create(utils, autoBuyCallback, autoRebirthCallback, autoHarvestCallb
     -- Right Content Panels Area
     local ContentArea = Instance.new("Frame")
     ContentArea.Name = "ContentArea"
-    ContentArea.Size = UDim2.new(1, -130, 1, -4)
-    ContentArea.Position = UDim2.new(0, 130, 0, 4)
+    ContentArea.Size = UDim2.new(1, -130, 1, 0)
+    ContentArea.Position = UDim2.new(0, 130, 0, 0)
     ContentArea.BackgroundTransparency = 1
     ContentArea.Parent = MainFrame
     
@@ -352,6 +346,7 @@ function UI.create(utils, autoBuyCallback, autoRebirthCallback, autoHarvestCallb
         label.TextSize = 11
         label.Font = Enum.Font.GothamBold
         label.TextXAlignment = Enum.TextXAlignment.Left
+        label.TextWrapped = true -- Enable wrapping
         label.Parent = container
         
         local toggleButton = Instance.new("TextButton")
@@ -419,7 +414,7 @@ function UI.create(utils, autoBuyCallback, autoRebirthCallback, autoHarvestCallb
     LeftColumn.BackgroundTransparency = 1
     LeftColumn.Parent = mainPage
     
-    local AutoBuyToggleBtn, setAutoBuyToggle = createPremiumToggle(LeftColumn, UDim2.new(1, 0, 0, 40), UDim2.new(0, 0, 0, 5), "Auto Purchase Upgrades")
+    local AutoBuyToggleBtn, setAutoBuyToggle = createPremiumToggle(LeftColumn, UDim2.new(1, 0, 0, 40), UDim2.new(0, 0, 0, 5), "Auto Buy")
     
     -- Cash & Status card
     local StatusCard = Instance.new("Frame")
@@ -524,7 +519,7 @@ function UI.create(utils, autoBuyCallback, autoRebirthCallback, autoHarvestCallb
     -- ----------------------------------------------------
     -- Content for Harvest Page
     -- ----------------------------------------------------
-    local AutoHarvestToggleBtn, setAutoHarvestToggle = createPremiumToggle(harvestPage, UDim2.new(1, 0, 0, 42), UDim2.new(0, 0, 0, 25), "Auto Harvest Lemons")
+    local AutoHarvestToggleBtn, setAutoHarvestToggle = createPremiumToggle(harvestPage, UDim2.new(1, 0, 0, 42), UDim2.new(0, 0, 0, 25), "Auto Harvest")
     
     -- Fruit Selector Card
     local SelectorCard = Instance.new("Frame")
