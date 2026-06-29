@@ -99,6 +99,7 @@ function UI.create(utils, autoBuyCallback, autoRebirthCallback, autoEvolveCallba
     local FloatStroke = Instance.new("UIStroke")
     FloatStroke.Color = Color3.fromRGB(255, 205, 50)
     FloatStroke.Thickness = 2
+    FloatStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border -- Ensure border outline, not text outline!
     FloatStroke.Parent = ToggleFloatingBtn
     
     local FloatGradient = Instance.new("UIGradient")
@@ -221,6 +222,7 @@ function UI.create(utils, autoBuyCallback, autoRebirthCallback, autoEvolveCallba
     local CloseStroke = Instance.new("UIStroke")
     CloseStroke.Color = Color3.fromRGB(45, 45, 52)
     CloseStroke.Thickness = 1
+    CloseStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
     CloseStroke.Parent = CloseBtn
     
     CloseBtn.MouseEnter:Connect(function()
@@ -306,6 +308,7 @@ function UI.create(utils, autoBuyCallback, autoRebirthCallback, autoEvolveCallba
         local btnStroke = Instance.new("UIStroke")
         btnStroke.Color = Color3.fromRGB(30, 30, 36)
         btnStroke.Thickness = 1
+        btnStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
         btnStroke.Parent = btn
         
         btn.MouseButton1Click:Connect(function()
@@ -568,6 +571,7 @@ function UI.create(utils, autoBuyCallback, autoRebirthCallback, autoEvolveCallba
     local fsStroke = Instance.new("UIStroke")
     fsStroke.Color = Color3.fromRGB(55, 55, 65)
     fsStroke.Thickness = 1
+    fsStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
     fsStroke.Parent = FruitSelectBtn
     
     makeInteractive(FruitSelectBtn, Color3.fromRGB(30, 30, 40), Color3.fromRGB(40, 40, 52), Color3.fromRGB(55, 55, 65), Color3.fromRGB(255, 215, 0))
