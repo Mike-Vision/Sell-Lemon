@@ -21,6 +21,7 @@ return function(loadModule)
     local evoComp = tycoon:GetComponent(ClientTycoonEvolution)
     local ascensionComp = tycoon:GetComponent(ClientTycoonAscension)
     local tycoonBalances = tycoon:GetComponent(TycoonBalances)
+    local phoneOffersComp = tycoon:GetComponent(ClientTycoonPhoneOffers)
     
     local evolutionParams = Balance.RebirthParameters.Evolution
     local function nextEvolutionInvestors(lvl)
@@ -43,6 +44,7 @@ return function(loadModule)
     local AutoRebirthEnabled = false
     local AutoEvolveEnabled = false
     local AutoAscendEnabled = false
+    local AutoPhoneEnabled = false
     local AutoHarvestEnabled = false
     
     local ui
@@ -91,6 +93,9 @@ return function(loadModule)
             AutoAscendEnabled = enabled
         end,
         function(enabled)
+            AutoPhoneEnabled = enabled
+        end,
+        function(enabled)
             AutoHarvestEnabled = enabled
             updateQuantity()
         end,
@@ -98,6 +103,27 @@ return function(loadModule)
             Running = false
         end
     )
+    
+    -- Auto Accept Phone Offers
+    local offerStartedConn = phoneOffersComp.OfferStarted:Connect(function(price)
+        if AutoPhoneEnabled then
+            task.wait(0.5) -- Briefly wait to look natural
+            if getgenv().ENI_SCRIPT_SESSION == currentSession then
+                phoneOffersComp:AcceptOffer()
+            end
+        end
+    end)
+    table.insert(getgenv().ENI_CONNECTIONS, offerStartedConn)
+
+    local offerUpdatedConn = phoneOffersComp.OfferUpdated:Connect(function(price)
+        if AutoPhoneEnabled then
+            task.wait(0.5)
+            if getgenv().ENI_SCRIPT_SESSION == currentSession then
+                phoneOffersComp:AcceptOffer()
+            end
+        end
+    end)
+    table.insert(getgenv().ENI_CONNECTIONS, offerUpdatedConn)
     
     -- Listen to fruit click events in real-time
     local clickSignal = RemoteSignal.new("ClickFruitService.Clicked")

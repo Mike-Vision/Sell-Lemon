@@ -63,7 +63,7 @@ local function makeInteractive(button, defaultBg, hoverBg, defaultStroke, hoverS
     end)
 end
 
-function UI.create(utils, autoBuyCallback, autoRebirthCallback, autoEvolveCallback, autoAscendCallback, autoHarvestCallback, closeCallback)
+function UI.create(utils, autoBuyCallback, autoRebirthCallback, autoEvolveCallback, autoAscendCallback, autoPhoneCallback, autoHarvestCallback, closeCallback)
     local ScreenGui = Instance.new("ScreenGui")
     ScreenGui.Name = "SellLemonsAutoBuyGui"
     ScreenGui.ResetOnSpawn = false
@@ -271,7 +271,7 @@ function UI.create(utils, autoBuyCallback, autoRebirthCallback, autoEvolveCallba
     
     local mainPage = createPage("Main", "🏠 AUTOMATION SETTINGS")
     local harvestPage = createPage("Harvest", "🍋 HARVEST CONTROLS")
-    local infoPage = createPage("Info", "ℹ️ ENI SYSTEM INFO")
+    local infoPage = createPage("Info", "ℹ️ SYSTEM INFO")
     
     local function selectTab(tabName)
         for name, page in pairs(pages) do
@@ -408,7 +408,7 @@ function UI.create(utils, autoBuyCallback, autoRebirthCallback, autoEvolveCallba
     end
     
     -- ----------------------------------------------------
-    -- Content for Main Page (Two Columns layout with 4 toggles)
+    -- Content for Main Page (Two Columns layout with 5 toggles)
     -- ----------------------------------------------------
     local LeftColumn = Instance.new("Frame")
     LeftColumn.Name = "LeftColumn"
@@ -419,11 +419,12 @@ function UI.create(utils, autoBuyCallback, autoRebirthCallback, autoEvolveCallba
     
     local AutoBuyToggleBtn, setAutoBuyToggle = createPremiumToggle(LeftColumn, UDim2.new(1, 0, 0, 35), UDim2.new(0, 0, 0, 5), "Auto Buy")
     local AutoEvolveToggleBtn, setAutoEvolveToggle = createPremiumToggle(LeftColumn, UDim2.new(1, 0, 0, 35), UDim2.new(0, 0, 0, 45), "Auto Evolve")
+    local AutoPhoneToggleBtn, setAutoPhoneToggle = createPremiumToggle(LeftColumn, UDim2.new(1, 0, 0, 35), UDim2.new(0, 0, 0, 85), "Auto Accept Phone")
     
     -- Cash & Status card
     local StatusCard = Instance.new("Frame")
-    StatusCard.Size = UDim2.new(1, 0, 1, -90)
-    StatusCard.Position = UDim2.new(0, 0, 0, 90)
+    StatusCard.Size = UDim2.new(1, 0, 1, -130)
+    StatusCard.Position = UDim2.new(0, 0, 0, 130)
     StatusCard.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
     StatusCard.Parent = LeftColumn
     
@@ -739,6 +740,13 @@ function UI.create(utils, autoBuyCallback, autoRebirthCallback, autoEvolveCallba
         autoEvolveState = not autoEvolveState
         setAutoEvolveToggle(autoEvolveState)
         autoEvolveCallback(autoEvolveState)
+    end)
+    
+    local autoPhoneState = false
+    AutoPhoneToggleBtn.MouseButton1Click:Connect(function()
+        autoPhoneState = not autoPhoneState
+        setAutoPhoneToggle(autoPhoneState)
+        autoPhoneCallback(autoPhoneState)
     end)
     
     local autoRebirthState = false
