@@ -1,6 +1,11 @@
 -- loader.lua
 -- Loader for Sell Lemons Auto Buy Script 🍋
 
+if game.PlaceId ~= 79268393072444 then
+    game.Players.LocalPlayer:Kick("Game not found in database of script!")
+    return
+end
+
 local githubUser = "Mike-Vision"
 local githubRepo = "Sell-Lemon"
 local githubBranch = "main"
