@@ -65,14 +65,14 @@ end
 
 function UI.create(utils, autoBuyCallback, autoRebirthCallback, autoEvolveCallback, autoAscendCallback, autoHarvestCallback, closeCallback)
     local ScreenGui = Instance.new("ScreenGui")
-    ScreenGui.Name = "ENIAutoBuyGui"
+    ScreenGui.Name = "SellLemonsAutoBuyGui"
     ScreenGui.ResetOnSpawn = false
     ScreenGui.Parent = PlayerGui
     
     -- Cleanup existing GUI
     pcall(function()
         for _, child in ipairs(PlayerGui:GetChildren()) do
-            if child.Name == "ENIAutoBuyGui" and child ~= ScreenGui then
+            if child.Name == "SellLemonsAutoBuyGui" and child ~= ScreenGui then
                 child:Destroy()
             end
         end
@@ -176,7 +176,7 @@ function UI.create(utils, autoBuyCallback, autoRebirthCallback, autoEvolveCallba
     local LogoText = Instance.new("TextLabel")
     LogoText.Size = UDim2.new(1, 0, 0, 50)
     LogoText.BackgroundTransparency = 1
-    LogoText.Text = "ENI HUB 🍋"
+    LogoText.Text = "Sell-Lemons 🍋"
     LogoText.TextColor3 = Color3.fromRGB(255, 215, 0)
     LogoText.TextSize = 16
     LogoText.Font = Enum.Font.GothamBold
