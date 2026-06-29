@@ -14,6 +14,17 @@ return function(loadModule)
     local tycoon = LocalTycoon.get()
     local rebirthComp = tycoon:GetComponent(ClientTycoonRebirth)
     
+    -- Setup Global Session Tracking & Event Cleanup
+    getgenv().ENI_SCRIPT_SESSION = os.clock()
+    local currentSession = getgenv().ENI_SCRIPT_SESSION
+    
+    if getgenv().ENI_CONNECTIONS then
+        for _, conn in ipairs(getgenv().ENI_CONNECTIONS) do
+            pcall(function() conn:Disconnect() end)
+        end
+    end
+    getgenv().ENI_CONNECTIONS = {}
+    
     local Running = true
     local AutoBuyEnabled = false
     local AutoRebirthEnabled = false
@@ -23,6 +34,8 @@ return function(loadModule)
     
     local function updateQuantity(isHarvesting)
         if not ui then return end
+        if getgenv().ENI_SCRIPT_SESSION ~= currentSession then return end
+        
         pcall(function()
             local totalClicked = ClickFruitService:GetFruitsClicked()
             local readyCount = 0
@@ -38,9 +51,9 @@ return function(loadModule)
             
             if AutoHarvestEnabled then
                 if isHarvesting then
-                    ui.HarvestStatusLabel.Text = "Status: Harvesting...\nQuantity: " .. readyCount .. " ready | " .. totalClicked .. " clicked\nNote: If Selected Fruit is not 'Active Fruit' and does not match your active tree type, harvesting will be skipped for safety."
+                    ui.HarvestStatusLabel.Text = "Status: Harvesting...\nQuantity: " .. readyCount .. " ready | " .. totalClicked .. " clicked\nNote: If Selected Fruit tree is not 'Active Fruit' and does not match your active evolution type, harvesting will be paused for safety."
                 else
-                    ui.HarvestStatusLabel.Text = "Status: Idle (Selected: " .. tostring(ui.selectedFruit) .. ")\nQuantity: " .. readyCount .. " ready | " .. totalClicked .. " clicked\nNote: If Selected Fruit is not 'Active Fruit' and does not match your active tree type, harvesting will be skipped for safety."
+                    ui.HarvestStatusLabel.Text = "Status: Idle (Selected: " .. tostring(ui.selectedFruit) .. ")\nQuantity: " .. readyCount .. " ready | " .. totalClicked .. " clicked\nNote: If Selected Fruit tree is not 'Active Fruit' and does not match your active evolution type, harvesting will be paused for safety."
                 end
             else
                 ui.HarvestStatusLabel.Text = "Status: OFF\nQuantity: - ready | " .. totalClicked .. " clicked"
@@ -67,15 +80,17 @@ return function(loadModule)
     
     -- Listen to fruit click events in real-time
     local clickSignal = RemoteSignal.new("ClickFruitService.Clicked")
-    clickSignal.OnClientEvent:Connect(function()
+    local clickConn = clickSignal.OnClientEvent:Connect(function()
         task.wait(0.05) -- Allow stats replication
         updateQuantity()
     end)
+    table.insert(getgenv().ENI_CONNECTIONS, clickConn)
     
     -- Listen to fruit growth changes in real-time (tycoon-wide + newly purchased trees)
     local function connectFruit(fruit)
         if fruit.Name == "Fruit" then
-            fruit:GetPropertyChangedSignal("Transparency"):Connect(updateQuantity)
+            local transConn = fruit:GetPropertyChangedSignal("Transparency"):Connect(updateQuantity)
+            table.insert(getgenv().ENI_CONNECTIONS, transConn)
         end
     end
     
@@ -87,14 +102,16 @@ return function(loadModule)
         end
     end
     
-    tycoon.Instance.DescendantAdded:Connect(function(descendant)
+    local addedConn = tycoon.Instance.DescendantAdded:Connect(function(descendant)
         if descendant:IsA("Model") and descendant.Name:lower():find("tree") then
-            descendant.ChildAdded:Connect(function(child)
+            local childConn = descendant.ChildAdded:Connect(function(child)
                 if child.Name == "Fruit" then
                     connectFruit(child)
                     updateQuantity()
                 end
             end)
+            table.insert(getgenv().ENI_CONNECTIONS, childConn)
+            
             for _, child in ipairs(descendant:GetChildren()) do
                 if child.Name == "Fruit" then
                     connectFruit(child)
@@ -103,12 +120,13 @@ return function(loadModule)
             updateQuantity()
         end
     end)
+    table.insert(getgenv().ENI_CONNECTIONS, addedConn)
     
     local LocalPlayer = game:GetService("Players").LocalPlayer
     
     -- Auto Buy & Rebirth Loop
     task.spawn(function()
-        while Running do
+        while Running and getgenv().ENI_SCRIPT_SESSION == currentSession do
             local success, err = pcall(function()
                 local cash = LocalPlayer.leaderstats.Cash.Value
                 
@@ -144,7 +162,9 @@ return function(loadModule)
             end)
             
             if not success then
-                ui.StatusLabel.Text = "Error: " .. tostring(err)
+                if ui and ui.StatusLabel then
+                    ui.StatusLabel.Text = "Error: " .. tostring(err)
+                end
             end
             task.wait(0.5)
         end
@@ -152,17 +172,19 @@ return function(loadModule)
     
     -- Auto Harvest Loop
     task.spawn(function()
-        while Running do
+        while Running and getgenv().ENI_SCRIPT_SESSION == currentSession do
             if AutoHarvestEnabled then
                 local success, err = pcall(function()
                     updateQuantity(true)
                     harvestModule.harvest(ui.selectedFruit, function()
-                        return AutoHarvestEnabled and Running
+                        return AutoHarvestEnabled and Running and getgenv().ENI_SCRIPT_SESSION == currentSession
                     end)
                     updateQuantity(false)
                 end)
                 if not success then
-                    ui.HarvestStatusLabel.Text = "Status Error: " .. tostring(err)
+                    if ui and ui.HarvestStatusLabel then
+                        ui.HarvestStatusLabel.Text = "Status Error: " .. tostring(err)
+                    end
                 end
             end
             task.wait(3.0)
